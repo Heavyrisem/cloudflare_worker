@@ -1,3 +1,6 @@
 name = "cloudflare-worker"
 main = "src/index.ts"
 compatibility_date = "2022-11-10"
+
+[vars]
+EXAMPLE_SECRET = "sample secret for local dev"

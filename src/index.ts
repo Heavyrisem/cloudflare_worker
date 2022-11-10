@@ -17,6 +17,7 @@ export interface Env {
   //
   // Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
   // MY_BUCKET: R2Bucket;
+  EXAMPLE_SECRET: string;
 }
 
 export default {
@@ -25,6 +26,8 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): Promise<Response> {
-    return new Response("Cloudflare Worker, deployed by Github Action");
+    return new Response(
+      `Cloudflare Worker, deployed by Github Action\nsecret: ${env.EXAMPLE_SECRET}`
+    );
   },
 };
