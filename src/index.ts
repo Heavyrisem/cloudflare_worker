@@ -1,33 +1,84 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `wrangler dev src/index.ts` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `wrangler publish src/index.ts --name my-worker` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+import { Router } from "itty-router";
+import { Env } from "./@types";
 
-export interface Env {
-  // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-  // MY_KV_NAMESPACE: KVNamespace;
-  //
-  // Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-  // MY_DURABLE_OBJECT: DurableObjectNamespace;
-  //
-  // Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-  // MY_BUCKET: R2Bucket;
-  EXAMPLE_SECRET: string;
-}
+const router = Router();
 
-export default {
-  async fetch(
-    request: Request,
-    env: Env,
-    ctx: ExecutionContext
-  ): Promise<Response> {
-    return new Response(
-      `Cloudflare Worker, deployed by Github Action\nsecret: ${env.EXAMPLE_SECRET}`
+router.get(
+  "/",
+  async (request: Request, env: Env, context: ExecutionContext) => {
+    const { searchParams } = new URL(request.url);
+    const key = searchParams.get("key");
+    if (typeof key !== "string")
+      return new Response("Key should be string", {
+        status: 403,
+      });
+
+    const result = await env.DB.get(key);
+    if (result === null)
+      return new Response(`${key} not founded`, {
+        status: 404,
+      });
+    return new Response(JSON.stringify({ key, value: result }, null, 2), {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
+);
+
+router.get(
+  "/list",
+  async (request: Request, env: Env, context: ExecutionContext) => {
+    const keys = (await env.DB.list()).keys.map((key) => key.name);
+
+    const list = await Promise.all(
+      keys.map(async (key) => ({
+        key,
+        value: await env.DB.get(key),
+      }))
     );
-  },
+
+    return new Response(JSON.stringify(list, null, 2), {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
+);
+
+router.post(
+  "/",
+  async (request: Request, env: Env, context: ExecutionContext) => {
+    const { key, value } = await request.json<{
+      key?: string;
+      value?: string;
+    }>();
+    if (key === undefined || value === undefined)
+      return new Response("Key or Value cannot be null", {
+        status: 403,
+      });
+
+    await env.DB.put(key, value);
+    return new Response("Data added");
+  }
+);
+
+router.delete(
+  "/",
+  async (request: Request, env: Env, context: ExecutionContext) => {
+    const { searchParams } = new URL(request.url);
+    const key = searchParams.get("key");
+    if (typeof key !== "string")
+      return new Response("Key should be string", {
+        status: 403,
+      });
+
+    await env.DB.delete(key);
+    return new Response("Data deleted");
+  }
+);
+
+// simple module version
+export default {
+  fetch: router.handle, // CF passes request, env, and context to this function
 };

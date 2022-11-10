@@ -1,3 +1,7 @@
 name = "cloudflare-worker"
 main = "src/index.ts"
 compatibility_date = "2022-11-10"
+
+kv_namespaces = [
+    { binding = "DB", id = "28f26f3b007a489e882e4c7cf995d3e9", preview_id = "28f26f3b007a489e882e4c7cf995d3e9" }
+]
