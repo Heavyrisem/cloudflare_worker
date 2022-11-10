@@ -26,6 +26,7 @@ jobs:
         uses: cloudflare/wrangler-action@2.0.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          preCommands: yarn install
           secrets: |
             EXAMPLE_SECRET
         env:
