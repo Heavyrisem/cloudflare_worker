@@ -1,0 +1,28 @@
+name: Deploy to Cloudflare # Github Action 페이지 좌측 리스트에 표시될 이름
+on: [push] # Push 이벤트가 발생한 경우에 실행, 응용하면 특정 브랜치나 버전 태그 생성 이벤트도 등록 가능
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-20.04 # Github의 러너를 사용
+    steps:
+      # Checkout Repository
+      - uses: actions/checkout@v2.1.0
+
+      - name: Build
+        run: |
+          npm install
+          npm build
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-20.04
+    needs: build # 선행 Build job이 끝난 후에 실행
+    steps:
+      # Checkout Repository
+      - uses: actions/checkout@v2.1.0
+
+      - name: Publish to Cloudflare
+        uses: cloudflare/wrangler-action@2.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
